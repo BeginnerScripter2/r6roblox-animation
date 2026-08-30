@@ -155,8 +155,8 @@ class Fighter:
         self.arm_ob.rotation_euler = (0.0, 0.0, yaw_deg * DEG)
         mc = self.bones.get("MC")
         if mc is not None:
-            mc.rotation_mode = 'XYZ'
-            mc.rotation_euler = (0.0, 0.0, 0.0)
+            mc.rotation_mode = 'QUATERNION'
+            mc.rotation_quaternion = (1.0, 0.0, 0.0, 0.0)
             mc.location = (0.0, 0.0, 0.0)
         bpy.context.view_layer.update()
 
