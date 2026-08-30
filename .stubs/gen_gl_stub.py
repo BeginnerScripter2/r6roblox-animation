@@ -1,0 +1,180 @@
+# Generate a no-op GL/GLX stub C file covering the classic GL + GLX + OpenGL API surface.
+import re
+gl_syms = """
+glClear glClearColor glClearDepth glClearStencil glClipPlane glColorMask glCopyPixels
+glCopyTexImage1D glCopyTexImage2D glCopyTexSubImage1D glCopyTexSubImage2D glCopyTexSubImage3D
+glCullFace glDeleteLists glDeleteTextures glDepthFunc glDepthMask glDisable glDrawArrays
+glDrawBuffer glDrawElements glDrawPixels glDrawRangeElements glEdgeFlag glEnable
+glEnd glEndList glEndQuery glEndTransformFeedback glEvalCoord1d glEvalCoord1f glEvalCoord2d glEvalCoord2f
+glEvalMesh1d glEvalMesh1f glEvalMesh2d glEvalMesh2f glFeedbackBuffer glFinish glFlush glFogf glFogi glFogfv glFogiv
+glFrontFace glFrustum glGenLists glGenQueries glGenTextures glGetBooleanv glGetBufferParameteriv
+glGetClipPlane glGetDoublev glGetError glGetFloatv glGetIntegerv glGetLightfv glGetLightiv
+glGetMapdv glGetMapfv glGetMapiv glGetMaterialfv glGetMaterialiv glGetPixelMapfv glGetPixelMapuiv
+glGetPointerv glGetPolygonStipple glGetString glGetTexEnvfv glGetTexEnviv glGetTexGenfv
+glGetTexGeniv glGetTexImage glGetTexLevelParameteriv glHint glIndexMask glIndexMaterial glIndexPointer
+glInitNames glInterpolateTextures glLightModelf glLightModelfv glLightModeli glLightModeliv glLightf
+glLightfv glLighti glLightiv glLineWidth glLogicOp glMap1d glMap1f glMap2d glMap2f
+glMapGrid1d glMapGrid1f glMapGrid2d glMapGrid2f glMaterialf glMaterialfv glMateriali glMaterialiv
+glMatrixMode glMultiDrawArrays glMultiDrawElements glNewList glNormal3b glNormal3bv glNormal3d glNormal3dv
+glNormal3f glNormal3fv glNormal3i glNormal3iv glNormal3s glNormal3sv glNormalPointer glOrtho
+glOrthof glPixelMapfv glPixelMapuiv glPixelStoref glPixelStorei glPointSize glPolygonMode
+glPolygonOffset glPolygonOffsetFactor glPolygonOffsetFill glPolygonOffsetLine glPolygonStipple
+glPopAttrib glPopClientAttrib glPopName glPrioritizeTextures glPushAttrib glPushClientAttrib glPushName
+glRasterPos2d glRasterPos2dv glRasterPos2f glRasterPos2fv glRasterPos2i glRasterPos2iv glRasterPos2s glRasterPos2sv
+glRasterPos3d glRasterPos3dv glRasterPos3f glRasterPos3fv glRasterPos3i glRasterPos3iv glRasterPos3s glRasterPos3sv
+glRasterPos4d glRasterPos4dv glRasterPos4f glRasterPos4fv glRasterPos4i glRasterPos4iv glRasterPos4s glRasterPos4sv
+glReadBuffer glReadPixels glRenderMode glRetainMode glRotatef glRotatei glScalef glScalei
+glScissor glSelectBuffer glShadeModel glStencilFunc glStencilMask glStencilOp glTexCoord1d glTexCoord1dv
+glTexCoord1f glTexCoord1fv glTexCoord1i glTexCoord1iv glTexCoord1s glTexCoord1sv glTexCoord2d glTexCoord2dv
+glTexCoord2f glTexCoord2fv glTexCoord2i glTexCoord2iv glTexCoord2s glTexCoord2sv glTexCoord3d glTexCoord3dv
+glTexCoord3f glTexCoord3fv glTexCoord3i glTexCoord3iv glTexCoord3s glTexCoord3sv glTexCoord4d glTexCoord4dv
+glTexCoord4f glTexCoord4fv glTexCoord4i glTexCoord4iv glTexCoord4s glTexCoord4sv glTexCoordPointer glTexEnvf
+glTexEnvfv glTexEnvi glTexEnviv glTexGend glTexGendv glTexGenf glTexGenfv glTexGeni glTexGeniv
+glTexImage1D glTexImage2D glTexImage3D glTexParameterf glTexParameterfv glTexParameteri glTexParameteriv
+glTexSubImage1D glTexSubImage2D glTexSubImage3D glTranslated glTranslatef glTransformFeedbackBufferBase
+glTransformFeedbackBufferRange glTransformFeedbackVaryings glViewport glWindowPos2d glWindowPos2dv glWindowPos2f
+glWindowPos2fv glWindowPos2i glWindowPos2iv glWindowPos3d glWindowPos3dv glWindowPos3f glWindowPos3fv glWindowPos3i
+glWindowPos3iv glBlendColor glBlendEquation glBlendFunc glBlendFuncSeparate glBlendEquationSeparate
+glAlphaFunc glCompressedTexImage1D glCompressedTexImage2D glCompressedTexImage3D glCompressedTexSubImage1D
+glCompressedTexSubImage2D glCompressedTexSubImage3D glDrawBuffers glActiveTexture glClientActiveTexture
+glCompressedTexture1D glCompressedTexture2D glCompressedTexture3D glCompressedTexture1DArray
+glCompressedTexture2DArray glCompressedTexture3D glCompressedTextureBuffer glCompressedSubTexture1D
+glCompressedSubTexture2D glCompressedSubTexture3D glCompressedSubTexture1DArray glCompressedSubTexture2DArray
+glCompressedSubTexture3D glCompressedSubTextureImage glCopyImageSubData glCopyTexture1D glCopyTexture2D
+glCopyTextureSubImage1D glCopyTextureSubImage2D glCopyTextureSubImage3D glCullFaceIndex glDebugMessageControl
+glDebugMessageInsert glDebugMessageCallback glDebugMessageCallbackARB glDepthRangef glDepthRangeIndexed
+glDepthBoundsEXT glDisablei glDisableIndexed glDrawArraysInstanced glDrawArraysIndirect glDrawArraysIndirect
+glDrawElementsBaseVertex glDrawElementsInstanced glDrawElementsInstancedBaseVertex glDrawElementsIndirect
+glDrawRangeElementsBaseVertex glEnablei glEnableIndexed glEndTransformFeedback glFlushMappedBufferRange
+glFogCoordPointer glFramebufferParameteri glFrameBufferSynchronized glGenBuffers glBindBuffer glBufferData
+glBufferSubData glMapBuffer glMapBufferRange glUnmapBuffer glGetBufferPointerv glGetBufferSubData
+glGetTexLevelSpacing glInterleavedArrays glIsBuffer glIsEnabled glIsTexture glIsTransformFeedback
+glLogicOp glMultiDrawArraysInstanced glMultiDrawElementsBaseVertex glMultiDrawElementsInstanced
+glMultiDrawElementsInstancedBaseVertex glMultiDrawArraysIndirect glMultiDrawElementsIndirect
+glProvokingVertex glPolygonOffsetEXT glProgramParameteri glPauseTransformFeedback glResumeTransformFeedback
+glReadnPixels glRenderbufferStorage glRenderbufferStorageMultisample glSampleCoverage glSampleMaski
+glStencilFuncSeparate glStencilMaskSeparate glStencilOpSeparate glTexImage2DMultisample glTexImage3DMultisample
+glTexStorage1D glTexStorage2D glTexStorage3D glTexStorage2DMultisample glTexStorage3DMultisample
+glTextureView glTextureBarrier glTextureRange glTransformFeedbackPause glTransformFeedbackResume
+glTransformFeedbackStreamVaryings glUniform1f glUniform1fv glUniform1i glUniform1iv glUniform2f glUniform2fv
+glUniform2i glUniform2iv glUniform3f glUniform3fv glUniform3i glUniform3iv glUniform4f glUniform4fv
+glUniform4i glUniform4iv glUniform1fv glUniformMatrix2fv glUniformMatrix3fv glUniformMatrix4fv
+glVertexAttrib1d glVertexAttrib1dv glVertexAttrib1f glVertexAttrib1fv glVertexAttrib1s glVertexAttrib1sv
+glVertexAttrib2d glVertexAttrib2dv glVertexAttrib2f glVertexAttrib2fv glVertexAttrib2s glVertexAttrib2sv
+glVertexAttrib3d glVertexAttrib3dv glVertexAttrib3f glVertexAttrib3fv glVertexAttrib3s glVertexAttrib3sv
+glVertexAttrib4d glVertexAttrib4dv glVertexAttrib4f glVertexAttrib4fv glVertexAttrib4Nub glVertexAttrib4Nbv
+glVertexAttrib4Niv glVertexAttrib4Nsv glVertexAttrib4Nubv glVertexAttrib4Nbv glVertexAttrib4Niv glVertexAttrib4Nsv
+glVertexAttrib4s glVertexAttrib4sv glVertexAttrib4ub glVertexAttrib4ubv glVertexAttrib4uiv glVertexAttrib4usv
+glVertexAttribDivisor glVertexAttribI1i glVertexAttribI1iv glVertexAttribI1ui glVertexAttribI1uiv
+glVertexAttribI2i glVertexAttribI2iv glVertexAttribI2ui glVertexAttribI2uiv glVertexAttribI3i glVertexAttribI3iv
+glVertexAttribI3ui glVertexAttribI3uiv glVertexAttribI4bv glVertexAttribI4i glVertexAttribI4iv glVertexAttribI4sv
+glVertexAttribI4ubv glVertexAttribI4ui glVertexAttribI4uiv glVertexAttribI4usv glVertexAttribIPointer
+glVertexAttribPointer glViewportIndexedf glViewportIndexedfv glWaitSync glWindowPos2dv glWindowPos2f
+glWindowPos2iv glWindowPos3dv glWindowPos3fv glWindowPos3iv glClampColor glClientWaitSync glDeleteSync
+glFenceSync glFlushBufferRange glGetFragDataIndex glGetFramebufferAttachmentParameteriv
+glGetProgramInterfaceiv glGetSynciv glGetUniformIndices glGetActiveUniformsiv glInvalidateBufferSubData
+glInvalidateFramebuffer glIsSync glObjectLabel glObjectPtrLabel glPatchParameteri glPatchParameterfv
+glReadnPixels glRenderbufferStorageMultisample glSecondaryColor3b glSecondaryColor3bv glSecondaryColor3d
+glSecondaryColor3dv glSecondaryColor3f glSecondaryColor3fv glSecondaryColor3i glSecondaryColor3iv
+glSecondaryColor3s glSecondaryColor3sv glSecondaryColorPointer glTexImage2DMultisample glTexImage3DMultisample
+glTextureBarrier glTextureStorage1D glTextureStorage2D glTextureStorage3D glTextureStorage2DMultisample
+glTextureStorage3DMultisample glTextureView glTransformFeedbackVaryings glUniform1u glUniform1ui
+glUniform1uiv glUniform2u glUniform2ui glUniform2uiv glUniform3u glUniform3ui glUniform3uiv glUniform4u
+glUniform4ui glUniform4uiv glBufferStorage glClearBufferData glClearBufferSubData glClearNamedBufferData
+glClearNamedBufferSubData glCompressedTexSubImage1D glCompressedTexSubImage2D glCompressedTexSubImage3D
+glCreateBuffers glBindBufferBase glBindBufferRange glBindBufferBaseEXT glBindBufferRangeEXT glCopyNamedBufferSubData
+glCreateBuffer glDeleteBuffersEXT glGetNamedBufferParameteriv glGetNamedBufferPointerv glGetNamedBufferSubData
+glMapNamedBuffer glMapNamedBufferRange glUnmapNamedBuffer glObjectLabel glTextureBarrier
+glCreateFramebuffer glBindFramebuffer glDeleteFramebuffers glFramebufferTexture1D glFramebufferTexture2D
+glFramebufferTexture3D glFramebufferRenderbuffer glGenerateMipmap glGetFramebufferAttachmentParameteriv
+glIsFramebuffer glReadnPixels glRenderbufferStorage glRenderbufferStorageMultisample glBlitFramebuffer
+glFramebufferParameteri glCreateRenderbuffers glDeleteRenderbuffers glBindRenderbuffer glRenderbufferStorage
+glRenderbufferStorageMultisample glGetRenderbufferParameteriv glIsRenderbuffer glNamedFramebufferTexture
+glNamedFramebufferTextureMultisample glNamedFramebufferParameteri glClearNamedFramebufferfv
+glClearNamedFramebufferiv glClearNamedFramebufferuiv glBlitNamedFramebuffer glNamedFramebufferDrawBuffers
+glNamedFramebufferReadBuffer glInvalidateNamedFramebuffer glIsNamedFramebuffer glCreateProgram
+glDeleteProgram glDetachShader glGetProgramiv glGetProgramInfoLog glLinkProgram glUseProgram glValidateProgram
+glCreateShader glDeleteShader glShaderSource glCompileShader glGetShaderiv glGetShaderInfoLog glAttachShader
+glGetActiveUniform glGetUniformLocation glGetActiveAttrib glGetShaderPrecisionFormat glUseProgramStage
+glSpecializeShader glProgramParameteri glProgramPparameter glGetProgramResourceIndex glGetProgramResourceName
+glGetProgramResourceiv glUseProgramStages glGetUniformIndices glGetActiveUniformsiv glGetUniformSubroutine
+glGetSubroutineIndex glCreateShaderProgramv glProgramUniform1f glProgramUniform1fv glProgramUniform1i
+glProgramUniform1iv glProgramUniform1ui glProgramUniform1uiv glProgramUniform2f glProgramUniform2fv
+glProgramUniform2i glProgramUniform2iv glProgramUniform2ui glProgramUniform2uiv glProgramUniform3f
+glProgramUniform3fv glProgramUniform3i glProgramUniform3iv glProgramUniform3ui glProgramUniform3uiv
+glProgramUniform4f glProgramUniform4fv glProgramUniform4i glProgramUniform4iv glProgramUniform4ui
+glProgramUniform4uiv glProgramUniformMatrix2fv glProgramUniformMatrix3fv glProgramUniformMatrix4fv
+glProgramUniform1xv glProgramUniform2xv glProgramUniform3xv glProgramUniform4xv
+glCreateSync glDeleteSync glFenceSync glClientWaitSync glWaitSync glIsSync glGetSynciv
+glGenQueries glDeleteQueries glBeginQuery glEndQuery glGetQueryiv glGetQueryObjectui64v
+glGetQueryObjectiv glStartTexImage glStartTexSubImage glEndTexImage glEndTexSubImage
+glTexStorage1D glTexStorage2D glTexStorage3D glTexStorage2DMultisample glTexStorage3DMultisample
+glClearTexSubImage glClearTexImage glTexSubImage1D glTexSubImage2D glTexSubImage3D glTextureBuffer
+glTextureBufferRange glTextureStorage1D glTextureStorage2D glTextureStorage3D glTextureStorage2DMultisample
+glTextureStorage3DMultisample glTextureParameteri glTextureParameterf glTextureParameteriv glTextureParameterfv
+glTextureImage1D glTextureImage2D glTextureImage3D glTextureSubImage1D glTextureSubImage2D glTextureSubImage3D
+glTextureView glGetTextureLevelParameter glTexStorage1DMultisample glTexStorage2DMultisample glTexStorage3DMultisample
+glGetTextureImage glGetCompressedTextureImage glGetNamedString glStringi glMemoryBarrier glMemoryBarrierByRegion
+glFlushMappedBufferRange glBufferStorage glBufferView glCreateContexts glCreateContextsAttribs
+glDestroyContexts glMakeContextCurrent glGetContexts
+glXGetProcAddress glXGetProcAddressARB glXChooseFBConfig glXCreateContextAttribsARB glXGetFBConfigAttrib
+glXGetFBConfigs glXQueryExtension glXGetVisualFromFBConfig glXChooseVisual glXCreateContext glXDestroyContext
+glXMakeCurrent glXGetCurrentContext glXQueryVersion glXSwapBuffers glXCopyContext glXQueryExtensionString
+glXCreatePbufferCrisp glXDestroyPbufferCrisp glXGetSelectedFBConfig glXQuerySupportedFBConfigAttributes
+glXCreateWindow glXDestroyWindow glXGetWindowAttribute glXSwapInterval glXSwapIntervalMESA
+glXGetSwapIntervalMESA glXBindTexImage glXReleaseTexImage glXCreatePbuffer glXDestroyPbuffer
+glXGetConfig glXQueryServerString glXQueryExtensionString glXIsDirect glXUseXFont glXCreateGLXPixmap
+glXDestroyGLXPixmap glXGetSelectedFBConfig glXFBConfigVisualID glXCreateNewContext glXQueryContext
+glXGetClientVersion glXQueryExtension glXBadFBConfig
+glGetStringi glGetInteger64i_v glGetSynci64_v glMinSampleShading glProvokingVertex glPrimitivesBoundingBox
+glPrimitivesBoundingBoxArgv glPrimitivesRange glPrimitiveBoundingBox glPrimitiveBoundingBoxArgv
+glBeginQueryIndexed glEndQueryIndexed glGetQueryIndexedv glGetQueryObjectIndex64v
+glDispatchCompute glDispatchComputeIndirect glMemoryBarrierByRegion glPushDebugGroup glPopDebugGroup
+glObjectLabel glObjectPtrLabel glPointParameteri glPointParameterf glPointSizeRange glPointSizeRanged
+glLineWidthRange glLineWidthRanged glSampleCoverage glSampleMasks glSampleMask glSampleMaskf
+glScissorArray glScissorArrayv glScissorIndexed glScissorIndexedv glTexImage2DArray glTexImage3DArray
+glTextureBufferAttachment glTextureBufferStorage glTextureStorage2DArray glTextureStorage3DArray
+glVertexAttribFormat glVertexAttribIFormat glVertexAttribLFormat glWindowPosPointer
+""".split()
+glx_syms = """
+glXGetProcAddress glXGetProcAddressARB glXChooseFBConfig glXCreateContextAttribsARB glXGetFBConfigAttrib
+glXGetFBConfigs glXQueryExtension glXGetVisualFromFBConfig glXChooseVisual glXCreateContext glXDestroyContext
+glXMakeCurrent glXGetCurrentContext glXQueryVersion glXSwapBuffers glXCopyContext glXCreateWindow
+glXDestroyWindow glXGetWindowAttribute glXSwapInterval glXSwapIntervalMESA glXGetSwapIntervalMESA
+glXBindTexImage glXReleaseTexImage glXCreatePbuffer glXDestroyPbuffer glXGetConfig glXQueryServerString
+glXQueryExtensionString glXIsDirect glXUseXFont glXCreateGLXPixmap glXDestroyGLXPixmap glXGetSelectedFBConfig
+glXFBConfigVisualID glXCreateNewContext glXQueryContext glXGetClientVersion
+""".split()
+lines = []
+for name in set(gl_syms) | set(glx_syms):
+    if not re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', name):
+        continue
+    lines.append("void %s(void); void *%s_ptr(void); " % (name, name))
+# Simpler: declare each as a no-op returning nothing / returning NULL via a macro list of functions
+c = ["#include <stddef.h>",
+     "#define NOOP(name) void name(void) { }",
+     "#define NOOPV(name) void *name(void) { return NULL; }"]
+for name in set(gl_syms) | set(glx_syms):
+    if not re.match(r'^[A-Za-z_][A-Za-z0-9_]*$', name):
+        continue
+    if name in ('glXGetProcAddress', 'glXGetProcAddressARB', 'glGetString', 'glGetStringi',
+                'glXGetFBConfigs', 'glXChooseVisual', 'glXGetFBConfigAttrib', 'glXQueryVersion',
+                'glXGetConfig', 'glXQueryServerString', 'glXQueryExtensionString', 'glXQueryContext',
+                'glXGetClientVersion', 'glXGetWindowAttribute', 'glXChooseFBConfig',
+                'glXCreateContextAttribsARB', 'glXGetVisualFromFBConfig', 'glXCreatePbuffer',
+                'glXCreateGLXPixmap', 'glXQueryExtension', 'glXIsDirect', 'glXCreateWindow',
+                'glXCreateContext', 'glXMakeCurrent', 'glXGetCurrentContext', 'glXDestroyContext',
+                'glXSwapBuffers', 'glXCopyContext', 'glXDestroyWindow', 'glXDestroyPbuffer',
+                'glXReleaseTexImage', 'glXBindTexImage', 'glXUseXFont', 'glXFBConfigVisualID',
+                'glXCreateNewContext', 'glXGetSelectedFBConfig', 'glXQuerySupportedFBConfigAttributes',
+                'glXCreatePbufferCrisp', 'glXDestroyPbufferCrisp'):
+        c.append("void *%s(void) { return NULL; }" % name)
+    elif name in ('glXSwapInterval', 'glXSwapIntervalMESA', 'glXGetSwapIntervalMESA', 'glIsDirect',
+                  'glGetError', 'glGetBooleanv', 'glGetFloatv', 'glGetDoublev', 'glGetIntegerv',
+                  'glGetPointerv', 'glGetInteger64i_v', 'glGetInteger64v', 'glIsEnabled',
+                  'glGetDoublei_v'):
+        c.append("int %s(void) { return 0; }" % name)
+    else:
+        c.append("void %s(void) { }" % name)
+open("glstub.c", "w").write("\n".join(c))
+print("wrote glstub.c with", len(set(gl_syms)|set(glx_syms)), "symbols")

@@ -1,0 +1,7 @@
+V_0.5.0 {
+  global:
+    Xkb*;
+    xkb_*;
+  local:
+    *;
+};
